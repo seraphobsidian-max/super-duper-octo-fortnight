@@ -1,36 +1,42 @@
-import os
-import sys
 import time
 import requests
+from flask import Flask, render_template, request, jsonify
 
-# SiegFried Sama Auto Share / Spam Share Tool
-# Note: Designed for automated Facebook post sharing via graph API tokens.
+app = Flask(__name__)
 
-def main():
-    print("--- Sinzu Auto Share ---")
-    token = input("Enter Facebook Token: ")
-    link = input("Enter Post Link/ID: ")
-    limit = int(input("Enter Share Limit: "))
+@app.route('/')
+def index():
+    return render_template('index.html')
+
+@app.route('/api/share', methods=['POST'])
+def handle_share():
+    data = request.json
+    token = data.get('token')
+    link = data.get('link')
+    limit = data.get('limit', 1)
     
+    logs = []
     headers = {
         'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
     }
-    
+
     count = 0
-    while count < limit:
+    for i in range(limit):
         try:
-            response = requests.post(
-                f"https://graph.facebook.com/me/feed?link={link}&access_token={token}",
-                headers=headers
-            )
+            url = f"https://graph.facebook.com/me/feed?link={link}&access_token={token}"
+            response = requests.post(url, headers=headers)
+            
             if response.status_code == 200:
                 count += 1
-                print(f"[{count}] Shared successfully.")
+                logs.append(f"[{count}] Shared successfully.")
             else:
-                print(f"Failed to share. Status: {response.status_code}")
+                logs.append(f"Failed to share. Status Code: {response.status_code}")
         except Exception as e:
-            print(f"Error: {e}")
+            logs.append(f"Error: {str(e)}")
+        
         time.sleep(1)
+        
+    return jsonify({"status": "done", "logs": logs})
 
 if __name__ == '__main__':
-    main()
+    app.run(debug=True, port=5000)
