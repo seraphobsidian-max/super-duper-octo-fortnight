@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sinzu Automation Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-900 text-white font-sans p-6">
+
+    <div class="max-w-2xl mx-auto bg-gray-800 rounded-lg p-6 shadow-xl border border-gray-700">
+        <h1 class="text-2xl font-bold text-blue-400 mb-6 text-center">Sinzu Auto Share Dashboard</h1>
+
+        <!-- Inputs Form -->
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm font-semibold text-gray-300 mb-1">FACEBOOK TOKEN</label>
+                <input type="password" id="token" placeholder="EAAB..." class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-sm focus:outline-none focus:border-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-300 mb-1">POST LINK / ID</label>
+                <input type="text" id="link" placeholder="https://facebook.com/..." class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-sm focus:outline-none focus:border-blue-500">
+            </div>
+
+            <div>
+                <label class="block text-sm font-semibold text-gray-300 mb-1">LIMIT</label>
+                <input type="number" id="limit" value="5" min="1" class="w-full bg-gray-700 border border-gray-600 rounded p-2 text-sm focus:outline-none focus:border-blue-500">
+            </div>
+
+            <button onclick="runShare()" id="btnSubmit" class="w-full bg-blue-600 hover:bg-blue-500 font-bold py-2.5 rounded transition">Run Automation</button>
+        </div>
+
+        <!-- Terminal Output -->
+        <div class="mt-6">
+            <h2 class="text-sm font-semibold text-gray-400 mb-2">Live Logs</h2>
+            <div id="logs" class="bg-black p-4 rounded h-48 overflow-y-auto font-mono text-xs text-green-400 space-y-1">
+                <div>[System] Dashboard ready.</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function runShare() {
+            const token = document.getElementById('token').value;
+            const link = document.getElementById('link').value;
+            const limit = document.getElementById('limit').value;
+            const logsDiv = document.getElementById('logs');
+            const btn = document.getElementById('btnSubmit');
+
+            if (!token || !link) {
+                alert('Paki-punan ang Token at Link/ID.');
+                return;
+            }
+
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
+            logsDiv.innerHTML += `<div>[${new Date().toLocaleTimeString()}] Processing requests...</div>`;
+
+            try {
+                const response = await fetch('/api/share', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ token, link, limit: parseInt(limit) })
+                });
+
+                const data = await response.json();
+                
+                if (data.logs) {
+                    data.logs.forEach(log => {
+                        logsDiv.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${log}</div>`;
+                    });
+                }
+            } catch (err) {
+                logsDiv.innerHTML += `<div class="text-red-500">[Error] Request failed or server unreachable.</div>`;
+            }
+
+            btn.disabled = false;
+            btn.classList.remove('opacity-50');
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+    </script>
+
+</body>
+</html>
